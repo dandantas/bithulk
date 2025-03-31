@@ -71,8 +71,6 @@ docker-compose exec app npm test
 
 ## Architecture
 
-BitHulk follows Clean Architecture principles with clear separation of concerns:
-
 - **Domain Layer**: Core business logic and service interfaces
 - **Infrastructure Layer**: External services integrations (Bitbucket API, OpenAI, Google Chat)
 - **API Layer**: Controllers, routes, and middleware
