@@ -1,0 +1,42 @@
+# Dependency directories
+node_modules
+npm-debug.log
+.pnpm-store
+.pnpm-debug.log
+pnpm-debug.log
+
+# Build directory
+dist
+build
+
+# Environment files
+.env
+.env.*
+
+# Version control
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+docs
+
+# Development and testing
+.vscode
+.idea
+*.test.ts
+*.spec.ts
+coverage
+__tests__
+.nyc_output
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+.DS_Store
+*.log
+.ai 
