@@ -1,9 +1,9 @@
-import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import express from 'express';
+import { errorHandler } from './api/middlewares/error_handler';
 import { webhookRoutes } from './api/routes/webhook_routes';
 import { logger } from './infra/logger/logger';
-import { errorHandler } from './api/middlewares/error_handler';
 
 // Load environment variables
 dotenv.config();
@@ -32,4 +32,4 @@ app.listen(port, () => {
   logger.info(`Server running on port ${port}`);
 });
 
-export default app; 
+export default app;

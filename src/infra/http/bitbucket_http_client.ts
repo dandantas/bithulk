@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { BitbucketApiConfig, BitbucketRateLimitInfo } from '../../types/bitbucket_api';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import type { BitbucketApiConfig, BitbucketRateLimitInfo } from '../../types/bitbucket_api';
 import { logger } from '../logger/logger';
 
 /**
@@ -30,21 +30,21 @@ export class BitbucketHttpClient {
       (error) => {
         if (error.response) {
           this.updateRateLimitInfo(error.response);
-          
+
           // Log API errors
           logger.error(
             `Bitbucket API error: ${error.response.status} - ${
               error.response.data?.error?.message || JSON.stringify(error.response.data)
-            }`
+            }`,
           );
-          
+
           // Handle rate limiting
           if (error.response.status === 429) {
             logger.warn('Rate limit exceeded for Bitbucket API');
           }
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -56,7 +56,9 @@ export class BitbucketHttpClient {
       const response = await this.client.get<T>(endpoint, config);
       return response.data;
     } catch (error) {
-      logger.error(`Error making GET request to ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(
+        `Error making GET request to ${endpoint}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -70,7 +72,9 @@ export class BitbucketHttpClient {
       return response.data;
     } catch (error: any) {
       console.log(error?.response?.data);
-      logger.error(`Error making POST request to ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(
+        `Error making POST request to ${endpoint}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -85,7 +89,7 @@ export class BitbucketHttpClient {
   /**
    * Check if we're near the rate limit
    */
-  isNearRateLimit(threshold: number = 10): boolean {
+  isNearRateLimit(threshold = 10): boolean {
     if (!this.rateLimitInfo) return false;
     return this.rateLimitInfo.remaining <= threshold;
   }
@@ -95,12 +99,12 @@ export class BitbucketHttpClient {
    */
   private updateRateLimitInfo(response: AxiosResponse): void {
     // Extract rate limit information from headers if available
-    const limit = parseInt(response.headers['x-ratelimit-limit'] || '0', 10);
-    const remaining = parseInt(response.headers['x-ratelimit-remaining'] || '0', 10);
-    const reset = parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
+    const limit = Number.parseInt(response.headers['x-ratelimit-limit'] || '0', 10);
+    const remaining = Number.parseInt(response.headers['x-ratelimit-remaining'] || '0', 10);
+    const reset = Number.parseInt(response.headers['x-ratelimit-reset'] || '0', 10);
 
     if (limit > 0) {
       this.rateLimitInfo = { limit, remaining, reset };
     }
   }
-} 
+}

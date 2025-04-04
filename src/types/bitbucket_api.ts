@@ -73,93 +73,93 @@ export interface ParsedDiff {
 
 export type BitbucketPullRequestCommitsResponse = {
   values: BitbucketPullRequestCommit[];
-}
+};
 export type BitbucketPullRequestCommit = {
-  type: string
-  hash: string
-  date: string
+  type: string;
+  hash: string;
+  date: string;
   author: {
-    type: string
-    raw: string
+    type: string;
+    raw: string;
     user: {
-      display_name: string
+      display_name: string;
       links: {
         self: {
-          href: string
-        }
+          href: string;
+        };
         avatar: {
-          href: string
-        }
+          href: string;
+        };
         html: {
-          href: string
-        }
-      }
-      type: string
-      uuid: string
-      account_id: string
-      nickname: string
-    }
-  }
-  message: string
+          href: string;
+        };
+      };
+      type: string;
+      uuid: string;
+      account_id: string;
+      nickname: string;
+    };
+  };
+  message: string;
   summary: {
-    type: string
-    raw: string
-    markup: string
-    html: string
-  }
+    type: string;
+    raw: string;
+    markup: string;
+    html: string;
+  };
   links: {
     self: {
-      href: string
-    }
+      href: string;
+    };
     html: {
-      href: string
-    }
+      href: string;
+    };
     diff: {
-      href: string
-    }
+      href: string;
+    };
     approve: {
-      href: string
-    }
+      href: string;
+    };
     comments: {
-      href: string
-    }
+      href: string;
+    };
     statuses: {
-      href: string
-    }
+      href: string;
+    };
     patch: {
-      href: string
-    }
-  }
+      href: string;
+    };
+  };
   parents: Array<{
-    hash: string
+    hash: string;
     links: {
       self: {
-        href: string
-      }
+        href: string;
+      };
       html: {
-        href: string
-      }
-    }
-    type: string
-  }>
+        href: string;
+      };
+    };
+    type: string;
+  }>;
   repository: {
-    type: string
-    full_name: string
+    type: string;
+    full_name: string;
     links: {
       self: {
-        href: string
-      }
+        href: string;
+      };
       html: {
-        href: string
-      }
+        href: string;
+      };
       avatar: {
-        href: string
-      }
-    }
-    name: string
-    uuid: string
-  }
-}
+        href: string;
+      };
+    };
+    name: string;
+    uuid: string;
+  };
+};
 
 /**
  * Interface for Bitbucket Pull Request comment responses

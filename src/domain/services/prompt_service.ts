@@ -1,53 +1,52 @@
-import { ParsedDiff } from '../../types/bitbucket_api';
+import type { ParsedDiff } from '../../types/bitbucket_api';
 
 /**
  * Interface for prompt creation services
  */
 export interface IPromptService {
-    createCodePushAnalysisPrompt(
-        diffs: ParsedDiff[],
-        author: string,
-        repository: string,
-        commitMessage: string
-    ): string;
+  createCodePushAnalysisPrompt(
+    diffs: ParsedDiff[],
+    author: string,
+    repository: string,
+    commitMessage: string,
+  ): string;
 
-    createPullRequestAnalysisPrompt(
-        diffs: ParsedDiff[],
-        author: string,
-        repository: string,
-        prTitle: string,
-        prDescription: string
-    ): string;
+  createPullRequestAnalysisPrompt(
+    diffs: ParsedDiff[],
+    author: string,
+    repository: string,
+    prTitle: string,
+    prDescription: string,
+  ): string;
 }
 
 /**
  * Service responsible for creating prompts for different AI analysis scenarios
  */
 export class PromptService implements IPromptService {
+  constructor(private readonly mainLanguage: string) {}
 
-    constructor(
-        private readonly mainLanguage: string
-    ) {}
-
-    /**
-     * Creates a prompt for analyzing code push events
-     */
-    createCodePushAnalysisPrompt(
-        diffs: ParsedDiff[],
-        author: string,
-        repository: string,
-        commitMessage: string
-    ): string {
-        const fileChanges = diffs.map(diff => {
-            return `File: ${diff.filePath}
+  /**
+   * Creates a prompt for analyzing code push events
+   */
+  createCodePushAnalysisPrompt(
+    diffs: ParsedDiff[],
+    author: string,
+    repository: string,
+    commitMessage: string,
+  ): string {
+    const fileChanges = diffs
+      .map((diff) => {
+        return `File: ${diff.filePath}
 Type: ${diff.fileType}
 Stats: +${diff.stats.additions}, -${diff.stats.deletions}
 Changes:
 ${diff.rawContent}
 `;
-        }).join('\n---\n');
+      })
+      .join('\n---\n');
 
-        return `## Code Analysis Task
+    return `## Code Analysis Task
   
 You are a senior software engineer reviewing code changes for quality and issues.
 
@@ -71,28 +70,30 @@ Analyze these code changes and provide a concise, focused summary with these sec
 - Keep your analysis direct and focused on the most important aspects. Prioritize critical issues over style preferences.
 - You must write your analysis in ${this.mainLanguage}.
 `;
-    }
+  }
 
-    /**
-     * Creates a prompt for analyzing pull request events
-     */
-    createPullRequestAnalysisPrompt(
-        diffs: ParsedDiff[],
-        author: string,
-        repository: string,
-        prTitle: string,
-        prDescription: string
-    ): string {
-        const fileChanges = diffs.map(diff => {
-            return `File: ${diff.filePath}
+  /**
+   * Creates a prompt for analyzing pull request events
+   */
+  createPullRequestAnalysisPrompt(
+    diffs: ParsedDiff[],
+    author: string,
+    repository: string,
+    prTitle: string,
+    prDescription: string,
+  ): string {
+    const fileChanges = diffs
+      .map((diff) => {
+        return `File: ${diff.filePath}
 Type: ${diff.fileType}
 Stats: +${diff.stats.additions}, -${diff.stats.deletions}
 Changes:
 ${diff.rawContent}
 `;
-        }).join('\n---\n');
+      })
+      .join('\n---\n');
 
-        return `## Pull Request Review Task
+    return `## Pull Request Review Task
     
 You are a senior software engineer reviewing a pull request.
 
@@ -118,5 +119,5 @@ Review this pull request and provide detailed feedback with these sections:
 - Be the most concise and to the point as possible.
 - Be constructive in your feedback and focus on helping the author improve the PR.
 - You must write your analysis in ${this.mainLanguage}.`;
-    }
-} 
+  }
+}

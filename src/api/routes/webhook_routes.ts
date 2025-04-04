@@ -8,4 +8,4 @@ const webhookController = new WebhookController();
 // Bitbucket webhook endpoint
 router.post('/bitbucket', validateWebhookRequest, webhookController.handleWebhook);
 
-export { router as webhookRoutes }; 
+export { router as webhookRoutes };

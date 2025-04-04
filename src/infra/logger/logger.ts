@@ -8,24 +8,17 @@ const logFormat = printf(({ level, message, timestamp }) => {
 
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp(),
-    logFormat
-  ),
+  format: combine(timestamp(), logFormat),
   transports: [
     new winston.transports.Console({
-      format: combine(
-        colorize(),
-        timestamp(),
-        logFormat
-      )
+      format: combine(colorize(), timestamp(), logFormat),
     }),
-    new winston.transports.File({ 
-      filename: 'logs/error.log', 
-      level: 'error' 
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
     }),
-    new winston.transports.File({ 
-      filename: 'logs/combined.log' 
-    })
-  ]
-}); 
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+    }),
+  ],
+});

@@ -148,6 +148,6 @@ export type BitbucketEventPayload = {
   'repo:push': BitbucketPushEventPayload;
   'pullrequest:created': BitbucketPullRequestEventPayload;
   // Add more event types as needed
-}
+};
 
-export type BitbucketEventType = keyof BitbucketEventPayload; 
+export type BitbucketEventType = keyof BitbucketEventPayload;

@@ -11,7 +11,8 @@ coverage/
 .cursor
 .pnpm-store
 logs
-tests
+http_tests
+ollama
 # Compiled Java class files
 *.class
 
