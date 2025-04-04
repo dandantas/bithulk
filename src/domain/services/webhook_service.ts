@@ -3,49 +3,29 @@ import { BitbucketPullRequestEventPayload, BitbucketPushEventPayload } from '../
 import { BitbucketService } from './bitbucket_service';
 import { ParsedDiff } from '../../types/bitbucket_api';
 import { IAIProvider } from './ai_provider';
+import { IPromptService } from './prompt_service';
 
-// Helper function to create code analysis prompt
-function createCodeAnalysisPrompt(diffs: ParsedDiff[], author: string, repository: string, commitMessage: string): string {
-  const fileChanges = diffs.map(diff => {
-    return `File: ${diff.filePath}
-Type: ${diff.fileType}
-Stats: +${diff.stats.additions}, -${diff.stats.deletions}
-Changes:
-${diff.rawContent}
-`;
-  }).join('\n---\n');
-
-  return `## Code Analysis Task
-  
-You are a senior software engineer reviewing code changes for quality and issues.
-
-### Context
-- Repository: ${repository}
-- Author: ${author}
-- Commit message: ${commitMessage}
-- Number of files changed: ${diffs.length}
-
-### Changes
-${fileChanges}
-
-### Analysis Instructions
-Analyze these code changes and provide a concise, focused summary with these sections:
-1. **Summary**: 1-2 sentence overview of what changed
-2. **Files affected**: Brief list of affected files and what changed
-3. **Key improvements**: Any positive patterns or improvements
-4. **Potential issues**: Highlight critical problems, type errors, logic issues, security concerns, or performance problems
-5. **Suggestions**: Specific, actionable recommendations for improving the code
-
-Keep your analysis direct and focused on the most important aspects. Prioritize critical issues over style preferences.`;
+/**
+ * Interface for webhook processing services
+ */
+export interface IWebhookService {
+  processPullRequestCreated(payload: BitbucketPullRequestEventPayload): Promise<void>;
+  processRepoPush(payload: BitbucketPushEventPayload): Promise<void>;
 }
 
-export class WebhookService {
+export class WebhookService implements IWebhookService {
   private bitbucketService: BitbucketService;
   private aiProvider: IAIProvider;
+  private promptService: IPromptService;
 
-  constructor(bitbucketService: BitbucketService, aiProvider: IAIProvider) {
+  constructor(
+    bitbucketService: BitbucketService, 
+    aiProvider: IAIProvider,
+    promptService: IPromptService
+  ) {
     this.bitbucketService = bitbucketService;
     this.aiProvider = aiProvider;
+    this.promptService = promptService;
   }
 
   /**
@@ -57,13 +37,38 @@ export class WebhookService {
       const { actor, repository, pullrequest } = payload;
       logger.info(`Processing pull request created event from ${actor.display_name} for repository: ${repository.full_name}`);
 
-      const { title, description, state, type, author, created_on, updated_on, close_source_branch, closed_by, reason, comment_count, task_count, draft, source, destination, merge_commit, rendered } = pullrequest;
+      logger.info(`Pull request title: ${pullrequest.title}`);
+      logger.info(`Pull request description: ${pullrequest.description}`);
+      logger.info(`Pull request state: ${pullrequest.state}`);
+      logger.info(`Pull request type: ${pullrequest.type}`);
 
-      logger.info(`Pull request title: ${title}`);
-      logger.info(`Pull request description: ${description}`);
-      logger.info(`Pull request state: ${state}`);
-      logger.info(`Pull request type: ${type}`);
+      // Get PR diffs for analysis
+      const diffs = await this.getPullRequestDiffs(repository.full_name, pullrequest.id);
+      
+      // Skip if no diffs were found
+      if (diffs.length === 0) {
+        logger.info('No code changes found to analyze');
+        return;
+      }
+      
+      // const prompt = this.promptService.createPullRequestAnalysisPrompt(
+      //   diffs,
+      //   actor.display_name,
+      //   repository.full_name,
+      //   pullrequest.title,
+      //   pullrequest.description
+      // );
+      
+      // Send to AI for analysis
+      logger.info('Sending PR changes to AI for analysis');
+      // const analysisResult = await this.aiProvider.generateText(prompt, {
+      //   temperature: 0.1,
+      //   max_tokens: 1000
+      // });
+      
+      // logger.info('AI analysis completed with size: ' + analysisResult.length);
 
+      logger.info('Finished processing pull request event');
     } catch (error) {
       logger.error(`Error processing pull request created event: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
@@ -110,8 +115,8 @@ export class WebhookService {
         return;
       }
 
-      // Generate prompt for AI analysis
-      const prompt = createCodeAnalysisPrompt(
+      // Generate prompt for AI analysis using the prompt service
+      const prompt = this.promptService.createCodePushAnalysisPrompt(
         allDiffs,
         actor.display_name,
         repository.full_name,
@@ -152,6 +157,28 @@ export class WebhookService {
       return this.bitbucketService.parseDiff(rawDiff);
     } catch (error) {
       logger.error(`Error getting commit diffs: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get diffs for a specific pull request
+   */
+  private async getPullRequestDiffs(repository: string, pullRequestId: number): Promise<ParsedDiff[]> {
+    try {
+      // TODO: Implement PR diff retrieval when BitbucketService supports it
+      // This would call something like:
+      // const rawDiff = await this.bitbucketService.getPullRequestDiff({
+      //   repository,
+      //   pullRequestId,
+      //   context: 3
+      // });
+      
+      // For now, we'll return an empty array until the API method is implemented
+      logger.warn(`PR diff retrieval not yet implemented for PR #${pullRequestId} in ${repository}`);
+      return [];
+    } catch (error) {
+      logger.error(`Error getting PR diffs: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
