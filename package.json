@@ -2,21 +2,26 @@
   "name": "bithulk",
   "version": "1.0.0",
   "description": "Bitbucket webhook handler for code analysis",
-  "main": "dist/app.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
     "dev": "ts-node-dev --respawn --transpile-only --poll --watch src src/app.ts",
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "biome check --write ./*",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "axios": "^1.6.7",
-    "cors": "^2.8.5",
     "dotenv": "^16.4.1",
-    "express": "^4.18.2",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "express": "^4.18.2 || ^5.0.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -26,10 +31,22 @@
     "@types/node": "^20.11.10",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
+    "cors": "^2.8.5",
     "eslint": "^8.56.0",
+    "express": "^4.18.2",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
+  },
+  "keywords": ["bitbucket", "webhook", "code-analysis", "ai", "code-review"],
+  "author": "Daniel Dantas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dandantas/bithulk"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

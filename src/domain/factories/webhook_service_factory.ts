@@ -8,20 +8,42 @@ import { BitbucketServiceFactory } from './bitbucket_service_factory';
 dotenv.config();
 
 /**
+ * Configuration options for WebhookService
+ */
+export interface WebhookServiceOptions {
+  aiProviderType?: 'openai' | 'deepseek';
+  language?: string;
+  bitbucketApiToken?: string;
+  bitbucketApiUrl?: string;
+}
+
+/**
  * Factory for creating WebhookService instances
  */
 
 export class WebhookServiceFactory {
   /**
-   * Create a WebhookService instance with proper dependencies
+   * Create a WebhookService instance with customizable options
    */
-  static create(): WebhookService {
-    // Create BitbucketService using its factory
-    const bitbucketService = BitbucketServiceFactory.create();
+  static create(options: WebhookServiceOptions = {}): WebhookService {
+    const {
+      aiProviderType = (process.env.AI_PROVIDER_TYPE || 'deepseek') as 'openai' | 'deepseek',
+      language = process.env.LANGUAGE || 'English',
+      bitbucketApiToken = process.env.BITBUCKET_API_TOKEN,
+      bitbucketApiUrl = process.env.BITBUCKET_API_URL,
+    } = options;
 
-    const aiProviderType = (process.env.AI_PROVIDER_TYPE || 'deepseek') as 'openai' | 'deepseek';
+    // Create BitbucketService with optional custom configuration
+    const bitbucketService = BitbucketServiceFactory.create({
+      apiToken: bitbucketApiToken,
+      apiUrl: bitbucketApiUrl,
+    });
+
+    // Create AI provider
     const aiProvider = createAIProvider(aiProviderType);
-    const promptService = new PromptService('Portuguese (Brazil)');
+
+    // Create prompt service with specified language
+    const promptService = new PromptService(language);
 
     // Create and return WebhookService with dependencies
     return new WebhookService(bitbucketService, aiProvider, promptService);

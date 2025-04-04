@@ -9,7 +9,7 @@ import { logger } from './infra/logger/logger';
 dotenv.config();
 
 // Create Express app
-const app = express();
+const app: express.Application = express();
 const port = process.env.PORT || 3000;
 
 // Middleware

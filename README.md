@@ -1,100 +1,139 @@
 # BitHulk
 
-BitHulk is a service that receives Bitbucket repository webhook events, analyzes code changes using AI, and sends concise summaries to authors via Google Chat.
+Bitbucket webhook handler for code analysis with AI. BitHulk processes Bitbucket webhook events and provides automated code analysis using AI.
 
-## Features
-
-- Receives webhook events from Bitbucket repositories
-- Analyzes code changes with OpenAI
-- Sends summaries to commit authors via Google Chat
-- Provides insights into code quality and potential issues
-
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Bitbucket repository with admin access
-- OpenAI API key
-- Google Chat API access
-
-### Environment Setup
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/bithulk.git
-   cd bithulk
-   ```
-
-2. Copy the example environment file and fill in your credentials:
-   ```
-   cp .env.example .env
-   ```
-
-### Running with Docker
-
-Build and start the containers:
+## Installation
 
 ```bash
-docker-compose up -d
+npm install bithulk
+# or
+yarn add bithulk
+# or
+pnpm add bithulk
 ```
 
-The service will be available at http://localhost:3000
-
-### Configuring Bitbucket Webhooks
-
-1. Go to your Bitbucket repository settings
-2. Navigate to Webhooks and add a new webhook
-3. Set the URL to your deployed BitHulk instance: `https://your-domain.com/api/webhooks/bitbucket`
-4. Select the `Repository Push` event
-5. Save the webhook
-
-## Development
-
-### Running with Docker
+Express is a peer dependency that you'll need to install separately:
 
 ```bash
-# Start development server
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Run tests
-docker-compose exec app npm test
+npm install express cors
+# or
+yarn add express cors
+# or
+pnpm add express cors
 ```
 
-### API Endpoints
+## Usage
 
-- `GET /health` - Health check endpoint
-- `POST /api/webhooks/bitbucket` - Bitbucket webhook endpoint
+### Quick Start
 
-## Architecture
+Here's a simple example using Express:
 
-- **Domain Layer**: Core business logic and service interfaces
-- **Infrastructure Layer**: External services integrations (Bitbucket API, OpenAI, Google Chat)
-- **API Layer**: Controllers, routes, and middleware
-- **Types**: TypeScript types and interfaces
+```typescript
+import express from 'express';
+import { 
+  WebhookServiceFactory, 
+  WebhookHandler, 
+  createWebhookMiddleware 
+} from 'bithulk';
 
-## Project Structure
+// Create Express app
+const app = express();
+app.use(express.json());
+
+// Create webhook service with custom configuration
+const webhookService = WebhookServiceFactory.create({
+  aiProviderType: 'openai',
+  language: 'English'
+});
+
+// Create webhook handler
+const webhookHandler = new WebhookHandler(webhookService);
+
+// Handle Bitbucket webhooks using the middleware
+app.post('/webhooks/bitbucket', createWebhookMiddleware(webhookHandler));
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
+### Manual Integration
+
+If you need more control over the webhook processing:
+
+```typescript
+import express from 'express';
+import { 
+  WebhookServiceFactory, 
+  WebhookHandler 
+} from 'bithulk';
+
+// Create Express app
+const app = express();
+app.use(express.json());
+
+// Create webhook service
+const webhookService = WebhookServiceFactory.create();
+
+// Create webhook handler
+const webhookHandler = new WebhookHandler(webhookService);
+
+// Handle Bitbucket webhooks
+app.post('/webhooks/bitbucket', async (req, res, next) => {
+  try {
+    const eventType = req.headers['x-event-key'];
+    await webhookHandler.handleWebhookEvent(eventType, req.body);
+    res.status(200).json({ status: 'success' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.listen(3000);
+```
+
+## Configuration
+
+### Environment Variables
+
+BitHulk uses the following environment variables:
 
 ```
-├── src/
-│   ├── api/                # API Layer
-│   │   ├── controllers/    # Request handlers
-│   │   ├── middlewares/    # Express middlewares
-│   │   ├── routes/         # API routes
-│   │   └── validators/     # Request validation
-│   ├── domain/             # Domain Layer
-│   │   ├── entities/       # Domain entities
-│   │   └── services/       # Domain services
-│   ├── infra/              # Infrastructure Layer
-│   │   ├── http/           # HTTP clients
-│   │   └── logger/         # Logging
-│   ├── types/              # TypeScript types
-│   └── app.ts              # Application entry point
+# Bitbucket API
+BITBUCKET_API_URL=https://api.bitbucket.org/2.0
+BITBUCKET_WORKSPACE_ID=your-workspace-id
+BITBUCKET_ACCESS_TOKEN=your-access-token
+
+# AI Provider
+AI_PROVIDER_TYPE=openai # or deepseek
+
+# For OpenAI
+OPENAI_API_KEY=your-openai-api-key
+
+# For DeepSeek or other providers
+DEEPSEEK_API_KEY=your-deepseek-api-key
 ```
+
+### Configuration Options
+
+You can also configure the service programmatically:
+
+```typescript
+const webhookService = WebhookServiceFactory.create({
+  aiProviderType: 'openai', // 'openai' or 'deepseek'
+  language: 'English',      // Language for generated content
+  bitbucketApiToken: 'your-access-token',
+  bitbucketApiUrl: 'https://api.bitbucket.org/2.0'
+});
+```
+
+## Supported Events
+
+BitHulk currently supports the following Bitbucket events:
+
+- `repo:push` - When code is pushed to a repository
+- `pullrequest:created` - When a pull request is created
 
 ## License
 
-[MIT License](LICENSE)
+MIT

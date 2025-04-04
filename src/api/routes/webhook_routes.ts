@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { WebhookController } from '../controllers/webhook_controller';
 import { validateWebhookRequest } from '../middlewares/webhook_validator';
 
-const router = Router();
+const router: Router = Router();
 const webhookController = new WebhookController();
 
 // Bitbucket webhook endpoint

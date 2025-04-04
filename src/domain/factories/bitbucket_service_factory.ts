@@ -7,27 +7,44 @@ import { BitbucketService } from '../services/bitbucket_service';
 dotenv.config();
 
 /**
+ * Configuration options for BitbucketService
+ */
+export interface BitbucketServiceOptions {
+  apiUrl?: string;
+  apiToken?: string;
+  workspaceId?: string;
+}
+
+/**
  * Factory for creating BitbucketService instances
  */
 export class BitbucketServiceFactory {
   /**
-   * Create a BitbucketService instance with proper dependencies
+   * Create a BitbucketService instance with customizable options
    */
-  static create(): BitbucketService {
-    // Get config from environment variables
+  static create(options: BitbucketServiceOptions = {}): BitbucketService {
+    const {
+      apiUrl = process.env.BITBUCKET_API_URL,
+      apiToken = process.env.BITBUCKET_ACCESS_TOKEN,
+      workspaceId = process.env.BITBUCKET_WORKSPACE_ID,
+    } = options;
+
+    // Get config from environment variables or options
     const config: BitbucketApiConfig = {
-      baseUrl: process.env.BITBUCKET_API_URL || 'https://api.bitbucket.org/2.0',
-      workspaceId: process.env.BITBUCKET_WORKSPACE_ID || 'test-workspace',
-      accessToken: process.env.BITBUCKET_ACCESS_TOKEN || '',
+      baseUrl: apiUrl || 'https://api.bitbucket.org/2.0',
+      workspaceId: workspaceId || 'test-workspace',
+      accessToken: apiToken || '',
     };
 
     // Validate required configuration
     if (!config.workspaceId) {
-      throw new Error('BITBUCKET_WORKSPACE_ID environment variable is required');
+      throw new Error(
+        'BITBUCKET_WORKSPACE_ID environment variable or workspaceId option is required',
+      );
     }
 
     if (!config.accessToken) {
-      throw new Error('BITBUCKET_ACCESS_TOKEN environment variable is required');
+      throw new Error('BITBUCKET_ACCESS_TOKEN environment variable or apiToken option is required');
     }
 
     // Create the HTTP client
