@@ -18,11 +18,9 @@ export class WebhookServiceFactory {
     // Create BitbucketService using its factory
     const bitbucketService = BitbucketServiceFactory.create();
     
-    // Create AIProvider from factory
-    // Read from environment or default to deepseek
     const aiProviderType = (process.env.AI_PROVIDER_TYPE || 'deepseek') as 'openai' | 'deepseek';
     const aiProvider = createAIProvider(aiProviderType);
-    const promptService = new PromptService();
+    const promptService = new PromptService('Portuguese (Brazil)');
 
     // Create and return WebhookService with dependencies
     return new WebhookService(bitbucketService, aiProvider, promptService);

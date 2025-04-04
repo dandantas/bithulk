@@ -24,6 +24,11 @@ export interface IPromptService {
  * Service responsible for creating prompts for different AI analysis scenarios
  */
 export class PromptService implements IPromptService {
+
+    constructor(
+        private readonly mainLanguage: string
+    ) {}
+
     /**
      * Creates a prompt for analyzing code push events
      */
@@ -63,7 +68,9 @@ Analyze these code changes and provide a concise, focused summary with these sec
 4. **Potential issues**: Highlight critical problems, type errors, logic issues, security concerns, or performance problems
 5. **Suggestions**: Specific, actionable recommendations for improving the code
 
-Keep your analysis direct and focused on the most important aspects. Prioritize critical issues over style preferences.`;
+- Keep your analysis direct and focused on the most important aspects. Prioritize critical issues over style preferences.
+- You must write your analysis in ${this.mainLanguage}.
+`;
     }
 
     /**
@@ -101,13 +108,15 @@ ${fileChanges}
 
 ### Review Instructions
 Review this pull request and provide detailed feedback with these sections:
-1. **Summary**: Brief overview of what this PR accomplishes
+1. **Summary**: Brief overview of what this PR accomplishes, with most important changes highlighted (maximum 2 sentences)
 2. **Implementation**: Analysis of how well the implementation addresses the stated goal
 3. **Code quality**: Assessment of code readability, structure, and adherence to best practices
 4. **Potential issues**: Highlight any bugs, edge cases, or design problems
 5. **Testing considerations**: What should be tested before merging
 6. **Recommendations**: Specific suggestions for improvement before approval
 
-Be constructive in your feedback and focus on helping the author improve the PR.`;
+- Be the most concise and to the point as possible.
+- Be constructive in your feedback and focus on helping the author improve the PR.
+- You must write your analysis in ${this.mainLanguage}.`;
     }
 } 

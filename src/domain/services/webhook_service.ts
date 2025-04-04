@@ -4,6 +4,7 @@ import { BitbucketService } from './bitbucket_service';
 import { ParsedDiff } from '../../types/bitbucket_api';
 import { IAIProvider } from './ai_provider';
 import { IPromptService } from './prompt_service';
+import fs from 'fs';
 
 /**
  * Interface for webhook processing services
@@ -51,20 +52,24 @@ export class WebhookService implements IWebhookService {
         return;
       }
       
-      // const prompt = this.promptService.createPullRequestAnalysisPrompt(
-      //   diffs,
-      //   actor.display_name,
-      //   repository.full_name,
-      //   pullrequest.title,
-      //   pullrequest.description
-      // );
+      const prompt = this.promptService.createPullRequestAnalysisPrompt(
+        diffs,
+        actor.display_name,
+        repository.full_name,
+        pullrequest.title,
+        pullrequest.description
+      );
+
+      fs.writeFileSync('prompt.md', prompt);
       
       // Send to AI for analysis
       logger.info('Sending PR changes to AI for analysis');
-      // const analysisResult = await this.aiProvider.generateText(prompt, {
-      //   temperature: 0.1,
-      //   max_tokens: 1000
-      // });
+      const analysisResult = await this.aiProvider.generateText(prompt, {
+        temperature: 0.1,
+        max_tokens: 1000
+      });
+
+      fs.writeFileSync('analysis_result.md', analysisResult);
       
       // logger.info('AI analysis completed with size: ' + analysisResult.length);
 
@@ -166,17 +171,8 @@ export class WebhookService implements IWebhookService {
    */
   private async getPullRequestDiffs(repository: string, pullRequestId: number): Promise<ParsedDiff[]> {
     try {
-      // TODO: Implement PR diff retrieval when BitbucketService supports it
-      // This would call something like:
-      // const rawDiff = await this.bitbucketService.getPullRequestDiff({
-      //   repository,
-      //   pullRequestId,
-      //   context: 3
-      // });
-      
-      // For now, we'll return an empty array until the API method is implemented
-      logger.warn(`PR diff retrieval not yet implemented for PR #${pullRequestId} in ${repository}`);
-      return [];
+      const diffs = await this.bitbucketService.getPullRequestDiff(repository, pullRequestId);
+      return diffs.flatMap(diff => this.bitbucketService.parseDiff(diff));
     } catch (error) {
       logger.error(`Error getting PR diffs: ${error instanceof Error ? error.message : String(error)}`);
       throw error;

@@ -1,4 +1,4 @@
-import { BitbucketDiffOptions, BitbucketDiffResponse, ParsedDiff } from '../../types/bitbucket_api';
+import { BitbucketDiffOptions, BitbucketPullRequestCommitsResponse, ParsedDiff } from '../../types/bitbucket_api';
 import { BitbucketHttpClient } from '../../infra/http/bitbucket_http_client';
 import { logger } from '../../infra/logger/logger';
 
@@ -12,6 +12,31 @@ export class BitbucketService {
     this.httpClient = httpClient;
   }
 
+  private async getPullRequestCommits(repository: string, pullRequestId: number): Promise<BitbucketPullRequestCommitsResponse> {
+    const endpoint = `https://api.bitbucket.org/2.0/repositories/${repository}/pullrequests/${pullRequestId}/commits`;
+    const response = await this.httpClient.get<BitbucketPullRequestCommitsResponse>(endpoint);
+    return response;
+  }
+
+  async getPullRequestDiff(repository: string, pullRequestId: number): Promise<string[]> {
+    try {
+      logger.info(`Fetching diff for pull request ${pullRequestId} in ${repository}`);
+      const commits = await this.getPullRequestCommits(repository, pullRequestId);
+
+      const diffs = []
+      for (const commit of commits.values) {
+        const commitDiff = await this.getCommitDiff({
+          repository,
+          commitHash: commit.hash
+        });
+        diffs.push(commitDiff);
+      }
+      return diffs;
+    } catch (error) {
+      logger.error(`Error fetching pull request diff: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
   /**
    * Get the diff for a specific commit
    */
