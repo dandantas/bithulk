@@ -62,6 +62,20 @@ export class BitbucketHttpClient {
   }
 
   /**
+   * Make a POST request to the Bitbucket API
+   */
+  async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    try {
+      const response = await this.client.post<T>(endpoint, data, config);
+      return response.data;
+    } catch (error: any) {
+      console.log(error?.response?.data);
+      logger.error(`Error making POST request to ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
    * Get current rate limit information
    */
   getRateLimitInfo(): BitbucketRateLimitInfo | null {

@@ -60,7 +60,9 @@ export class WebhookService implements IWebhookService {
         pullrequest.description
       );
 
-      fs.writeFileSync('prompt.md', prompt);
+      if (process.env.NODE_ENV === 'development') {
+        fs.writeFileSync('pullrequest_analysis_prompt.md', prompt);
+      }
       
       // Send to AI for analysis
       logger.info('Sending PR changes to AI for analysis');
@@ -69,9 +71,17 @@ export class WebhookService implements IWebhookService {
         max_tokens: 1000
       });
 
-      fs.writeFileSync('analysis_result.md', analysisResult);
+      if (process.env.NODE_ENV === 'development') {
+        fs.writeFileSync('pullrequest_analysis_result.md', analysisResult);
+      }
       
-      // logger.info('AI analysis completed with size: ' + analysisResult.length);
+      // Post the analysis as a comment on the pull request
+      logger.info('Posting AI analysis as a comment on the pull request');
+      await this.bitbucketService.createPullRequestComment(
+        repository.full_name,
+        pullrequest.id,
+        `# Bithulk Review\n\n${analysisResult}`
+      );
 
       logger.info('Finished processing pull request event');
     } catch (error) {
@@ -128,6 +138,10 @@ export class WebhookService implements IWebhookService {
         push.changes[0].new?.target?.message || 'No commit message'
       );
 
+      if (process.env.NODE_ENV === 'development') {
+        fs.writeFileSync('push_analysis_prompt.md', prompt);
+      }
+
       // Send to AI for analysis
       logger.info('Sending code changes to AI for analysis');
       const analysisResult = await this.aiProvider.generateText(prompt, {
@@ -135,7 +149,13 @@ export class WebhookService implements IWebhookService {
         max_tokens: 1000  // Limit response size
       });
 
+
       logger.info('AI analysis completed with size: ' + analysisResult.length);
+
+      // Save analysis to a file (for debugging)
+      if (process.env.NODE_ENV === 'development') {
+        fs.writeFileSync('push_analysis_result.md', analysisResult);
+      }
 
       // TODO: Send the analysis result to Google Chat
       logger.info('Analysis result should be sent to Google Chat');

@@ -160,3 +160,43 @@ export type BitbucketPullRequestCommit = {
     uuid: string
   }
 }
+
+/**
+ * Interface for Bitbucket Pull Request comment responses
+ */
+export interface BitbucketPullRequestCommentResponse {
+  id: number;
+  content: {
+    raw: string;
+    markup: string;
+    html: string;
+    type: string;
+  };
+  created_on: string;
+  updated_on: string;
+  user: {
+    uuid: string;
+    display_name: string;
+    account_id: string;
+    links: {
+      self: { href: string };
+      avatar: { href: string };
+      html: { href: string };
+    };
+  };
+  deleted: boolean;
+  type: string;
+  links: {
+    self: { href: string };
+    html: { href: string };
+  };
+  pullrequest: {
+    id: number;
+    title: string;
+    type: string;
+    links: {
+      self: { href: string };
+      html: { href: string };
+    };
+  };
+}

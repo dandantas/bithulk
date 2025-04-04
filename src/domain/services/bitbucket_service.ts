@@ -1,4 +1,4 @@
-import { BitbucketDiffOptions, BitbucketPullRequestCommitsResponse, ParsedDiff } from '../../types/bitbucket_api';
+import { BitbucketDiffOptions, BitbucketPullRequestCommitsResponse, ParsedDiff, BitbucketPullRequestCommentResponse } from '../../types/bitbucket_api';
 import { BitbucketHttpClient } from '../../infra/http/bitbucket_http_client';
 import { logger } from '../../infra/logger/logger';
 
@@ -173,5 +173,33 @@ export class BitbucketService {
     };
     
     return extensionMap[extension] || 'plaintext';
+  }
+
+  /**
+   * Create a comment on a pull request
+   * @param repository Repository identifier in format workspace/repo-slug
+   * @param pullRequestId Pull request identifier
+   * @param content Comment content (supports markdown)
+   * @returns Comment response from the API
+   */
+  async createPullRequestComment(repository: string, pullRequestId: number, content: string): Promise<BitbucketPullRequestCommentResponse> {
+    try {
+      logger.info(`Creating comment on pull request ${pullRequestId} in ${repository}`);
+      
+      const endpoint = `/repositories/${repository}/pullrequests/${pullRequestId}/comments`;
+
+      const data = {
+        content: {
+          raw: content,
+        }
+      }
+      const response = await this.httpClient.post<BitbucketPullRequestCommentResponse>(endpoint, data);
+      
+      logger.info(`Comment created successfully on PR #${pullRequestId}`);
+      return response;
+    } catch (error) {
+      logger.error(`Error creating pull request comment: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
   }
 } 
