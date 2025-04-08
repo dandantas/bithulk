@@ -7,12 +7,13 @@
 // Export types
 export * from './types/bitbucket';
 export * from './types/bitbucket_api';
+export * from './types/config';
 
 // Export core services
 export { WebhookService } from './domain/services/webhook_service';
 export type { IWebhookService } from './domain/services/webhook_service';
 export { PromptService } from './domain/services/prompt_service';
-export type { IPromptService } from './domain/services/prompt_service';
+export type { IPromptService, PRAnalysisOptions } from './domain/services/prompt_service';
 export type { IAIProvider } from './domain/services/ai_provider';
 
 // Export factories

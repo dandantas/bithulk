@@ -5,6 +5,7 @@ import type {
   BitbucketPushEventPayload,
 } from '../../types/bitbucket';
 import type { ParsedDiff } from '../../types/bitbucket_api';
+import type { AppConfig } from '../../types/config';
 import type { IAIProvider } from './ai_provider';
 import type { BitbucketService } from './bitbucket_service';
 import type { IPromptService } from './prompt_service';
@@ -21,15 +22,18 @@ export class WebhookService implements IWebhookService {
   private bitbucketService: BitbucketService;
   private aiProvider: IAIProvider;
   private promptService: IPromptService;
+  private config?: AppConfig;
 
   constructor(
     bitbucketService: BitbucketService,
     aiProvider: IAIProvider,
     promptService: IPromptService,
+    config?: AppConfig,
   ) {
     this.bitbucketService = bitbucketService;
     this.aiProvider = aiProvider;
     this.promptService = promptService;
+    this.config = config;
   }
 
   /**
@@ -38,6 +42,12 @@ export class WebhookService implements IWebhookService {
    */
   async processPullRequestCreated(payload: BitbucketPullRequestEventPayload): Promise<void> {
     try {
+      // Check if the event is enabled
+      if (this.config && (!this.config.events.enabled || !this.config.events.handlers.pullRequestCreated?.enabled)) {
+        logger.info('Pull request created event handling is disabled');
+        return;
+      }
+    
       const { actor, repository, pullrequest } = payload;
       logger.info(
         `Processing pull request created event from ${actor.display_name} for repository: ${repository.full_name}`,
@@ -57,12 +67,16 @@ export class WebhookService implements IWebhookService {
         return;
       }
 
+      // Get configuration options
+      const reviewDepth = this.config?.events.handlers.pullRequestCreated?.options?.reviewDepth || 'detailed';
+      
       const prompt = this.promptService.createPullRequestAnalysisPrompt(
         diffs,
         actor.display_name,
         repository.full_name,
         pullrequest.title,
         pullrequest.description,
+        { reviewDepth }
       );
 
       if (process.env.NODE_ENV === 'development') {
@@ -71,22 +85,37 @@ export class WebhookService implements IWebhookService {
 
       // Send to AI for analysis
       logger.info('Sending PR changes to AI for analysis');
-      const analysisResult = await this.aiProvider.generateText(prompt, {
-        temperature: 0.1,
-        max_tokens: 1000,
-      });
+      
+      // Get AI configuration
+      const aiOptions = {
+        temperature: this.config?.ai.provider === 'openai' 
+          ? this.config?.ai.openai?.temperature || 0.1 
+          : this.config?.ai.deepseek?.temperature || 0.1,
+        max_tokens: this.config?.ai.provider === 'openai'
+          ? this.config?.ai.openai?.maxTokens || 1000
+          : this.config?.ai.deepseek?.maxTokens || 1000
+      };
+      
+      const analysisResult = await this.aiProvider.generateText(prompt, aiOptions);
 
       if (process.env.NODE_ENV === 'development') {
         fs.writeFileSync('pullrequest_analysis_result.md', analysisResult);
       }
 
-      // Post the analysis as a comment on the pull request
-      logger.info('Posting AI analysis as a comment on the pull request');
-      await this.bitbucketService.createPullRequestComment(
-        repository.full_name,
-        pullrequest.id,
-        `# Bithulk Review\n\n${analysisResult}`,
-      );
+      // Check if posting comments is enabled
+      const shouldPostComment = this.config?.events.handlers.pullRequestCreated?.options?.postComment !== false;
+      
+      if (shouldPostComment) {
+        // Post the analysis as a comment on the pull request
+        logger.info('Posting AI analysis as a comment on the pull request');
+        await this.bitbucketService.createPullRequestComment(
+          repository.full_name,
+          pullrequest.id,
+          `# Bithulk Review\n\n${analysisResult}`,
+        );
+      } else {
+        logger.info('Skipping posting comment as it is disabled in configuration');
+      }
 
       logger.info('Finished processing pull request event');
     } catch (error) {
@@ -103,6 +132,12 @@ export class WebhookService implements IWebhookService {
    */
   async processRepoPush(payload: BitbucketPushEventPayload): Promise<void> {
     try {
+      // Check if the event is enabled
+      if (this.config && (!this.config.events.enabled || !this.config.events.handlers.repoPush?.enabled)) {
+        logger.info('Repository push event handling is disabled');
+        return;
+      }
+      
       logger.info(`Processing push event for repository: ${payload.repository.full_name}`);
 
       // Extract relevant information
@@ -120,7 +155,13 @@ export class WebhookService implements IWebhookService {
         const targetBranch = change.new.name;
 
         logger.info(`Target branch: ${targetBranch}`);
-        // Check if the target branch is a branch that we want to analyze
+        
+        // Check if the branch is in the monitored branches list (if specified)
+        const monitoredBranches = this.config?.events.handlers.repoPush?.options?.branches || [];
+        if (monitoredBranches.length > 0 && !monitoredBranches.includes(targetBranch)) {
+          logger.info(`Branch ${targetBranch} is not in the monitored branches list, skipping`);
+          continue;
+        }
 
         logger.info(`New commit: ${newCommit.hash.substring(0, 7)} by ${actor.display_name}`);
         logger.info(`Commit message: ${newCommit.message}`);
@@ -151,10 +192,18 @@ export class WebhookService implements IWebhookService {
 
       // Send to AI for analysis
       logger.info('Sending code changes to AI for analysis');
-      const analysisResult = await this.aiProvider.generateText(prompt, {
-        temperature: 0.1, // Lower temperature for more focused, deterministic responses
-        max_tokens: 1000, // Limit response size
-      });
+      
+      // Get AI configuration
+      const aiOptions = {
+        temperature: this.config?.ai.provider === 'openai' 
+          ? this.config?.ai.openai?.temperature || 0.1 
+          : this.config?.ai.deepseek?.temperature || 0.1,
+        max_tokens: this.config?.ai.provider === 'openai'
+          ? this.config?.ai.openai?.maxTokens || 1000
+          : this.config?.ai.deepseek?.maxTokens || 1000
+      };
+      
+      const analysisResult = await this.aiProvider.generateText(prompt, aiOptions);
 
       logger.info(`AI analysis completed with size: ${analysisResult.length}`);
 
@@ -163,8 +212,15 @@ export class WebhookService implements IWebhookService {
         fs.writeFileSync('push_analysis_result.md', analysisResult);
       }
 
-      // TODO: Send the analysis result to Google Chat
-      logger.info('Analysis result should be sent to Google Chat');
+      // Check if Google Chat notification is enabled
+      const shouldNotifyChat = this.config?.events.handlers.repoPush?.options?.notifyChat !== false;
+      
+      if (shouldNotifyChat) {
+        // TODO: Send the analysis result to Google Chat
+        logger.info('Analysis result should be sent to Google Chat');
+      } else {
+        logger.info('Skipping Google Chat notification as it is disabled in configuration');
+      }
 
       logger.info('Finished processing push event');
     } catch (error) {
