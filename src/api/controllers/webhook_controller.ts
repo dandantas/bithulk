@@ -7,13 +7,16 @@ import type {
   BitbucketPullRequestEventPayload,
   BitbucketPushEventPayload,
 } from '../../types/bitbucket';
+import type { AppConfig } from '../../types/config';
 
 export class WebhookController {
   private webhookService: WebhookService;
 
-  constructor() {
+  constructor(config: Partial<AppConfig>) {
     // Use the factory to get a properly configured service with all dependencies
-    this.webhookService = WebhookServiceFactory.create();
+    this.webhookService = WebhookServiceFactory.createWithConfig({
+      ...config,
+    })
   }
 
   handleWebhook = async (

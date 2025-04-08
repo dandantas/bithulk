@@ -1,6 +1,13 @@
 import type { ParsedDiff } from '../../types/bitbucket_api';
 
 /**
+ * Options for PR analysis prompt
+ */
+export interface PRAnalysisOptions {
+  reviewDepth?: 'basic' | 'detailed' | 'comprehensive';
+}
+
+/**
  * Interface for prompt creation services
  */
 export interface IPromptService {
@@ -17,6 +24,7 @@ export interface IPromptService {
     repository: string,
     prTitle: string,
     prDescription: string,
+    options?: PRAnalysisOptions,
   ): string;
 }
 
@@ -81,6 +89,7 @@ Analyze these code changes and provide a concise, focused summary with these sec
     repository: string,
     prTitle: string,
     prDescription: string,
+    options?: PRAnalysisOptions,
   ): string {
     const fileChanges = diffs
       .map((diff) => {
@@ -92,6 +101,22 @@ ${diff.rawContent}
 `;
       })
       .join('\n---\n');
+
+    // Adjust review depth based on options
+    const depth = options?.reviewDepth || 'detailed';
+    let depthInstructions = '';
+    
+    switch (depth) {
+      case 'basic':
+        depthInstructions = 'Focus only on critical issues. Keep your review brief and to the point.';
+        break;
+      case 'comprehensive':
+        depthInstructions = 'Provide a comprehensive, detailed review. Consider edge cases, performance implications, and potential future issues.';
+        break;
+      default:
+        depthInstructions = 'Provide a balanced review with attention to important details while staying concise.';
+        break;
+    }
 
     return `## Pull Request Review Task
     
@@ -116,7 +141,7 @@ Review this pull request and provide detailed feedback with these sections:
 5. **Testing considerations**: What should be tested before merging
 6. **Recommendations**: Specific suggestions for improvement before approval
 
-- Be the most concise and to the point as possible.
+- ${depthInstructions}
 - Be constructive in your feedback and focus on helping the author improve the PR.
 - You must write your analysis in ${this.mainLanguage}.`;
   }

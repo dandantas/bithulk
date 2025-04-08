@@ -138,6 +138,9 @@ export class BitbucketService {
           newLines,
           content: hunkContent,
         });
+        
+        // Get the next hunk match
+        hunkMatch = hunkRegex.exec(fileDiffContent);
       }
 
       parsedDiffs.push({
