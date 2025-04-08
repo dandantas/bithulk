@@ -57,6 +57,74 @@ app.listen(3000, () => {
 });
 ```
 
+### Advanced Configuration
+
+You can use the new configuration system for more advanced options:
+
+```typescript
+import express from 'express';
+import { 
+  WebhookServiceFactory, 
+  WebhookHandler, 
+  createWebhookMiddleware,
+  AppConfig 
+} from 'bithulk';
+
+// Create Express app
+const app = express();
+app.use(express.json());
+
+// Advanced configuration
+const config: AppConfig = {
+  bitbucket: {
+    apiUrl: 'https://api.bitbucket.org/2.0',
+    accessToken: process.env.BITBUCKET_ACCESS_TOKEN,
+    workspaceId: process.env.BITBUCKET_WORKSPACE_ID,
+  },
+  ai: {
+    provider: 'openai',
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY,
+      model: 'gpt-4o',
+      temperature: 0.1,
+      maxTokens: 1500,
+    },
+  },
+  language: 'English',
+  events: {
+    enabled: true,
+    handlers: {
+      pullRequestCreated: {
+        enabled: true,
+        options: {
+          postComment: true,
+          reviewDepth: 'detailed', // 'basic', 'detailed', or 'comprehensive'
+          timeLimit: 60,
+        },
+      },
+      repoPush: {
+        enabled: true,
+        options: {
+          branches: ['main', 'develop'],
+          notifyChat: true,
+        },
+      },
+    },
+  },
+};
+
+// Create webhook service with advanced configuration
+const webhookService = WebhookServiceFactory.createWithConfig(config);
+
+// Create webhook handler
+const webhookHandler = new WebhookHandler(webhookService);
+
+// Handle Bitbucket webhooks using the middleware
+app.post('/webhooks/bitbucket', createWebhookMiddleware(webhookHandler));
+
+app.listen(3000);
+```
+
 ### Manual Integration
 
 If you need more control over the webhook processing:
@@ -109,22 +177,80 @@ AI_PROVIDER_TYPE=openai # or deepseek
 
 # For OpenAI
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4o
 
 # For DeepSeek or other providers
 DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_MODEL=deepseek-r1:14b
 ```
 
 ### Configuration Options
 
-You can also configure the service programmatically:
+The configuration system supports several options that can be configured:
+
+#### Bitbucket Configuration
 
 ```typescript
-const webhookService = WebhookServiceFactory.create({
-  aiProviderType: 'openai', // 'openai' or 'deepseek'
-  language: 'English',      // Language for generated content
-  bitbucketApiToken: 'your-access-token',
-  bitbucketApiUrl: 'https://api.bitbucket.org/2.0'
-});
+bitbucket: {
+  apiUrl?: string;       // Bitbucket API URL
+  accessToken?: string;  // Access token for authentication
+  workspaceId?: string;  // Your Bitbucket workspace ID
+}
+```
+
+#### AI Provider Configuration
+
+```typescript
+ai: {
+  provider: 'openai' | 'deepseek';  // AI provider to use
+  
+  // OpenAI specific configuration
+  openai?: {
+    apiKey?: string;       // API key for OpenAI
+    apiUrl?: string;       // Custom API endpoint
+    model?: string;        // Model to use (default: gpt-4o)
+    temperature?: number;  // Response randomness (0-1)
+    maxTokens?: number;    // Maximum tokens in response
+  };
+  
+  // DeepSeek specific configuration
+  deepseek?: {
+    apiUrl?: string;       // API endpoint for DeepSeek
+    model?: string;        // Model to use
+    temperature?: number;  // Response randomness (0-1)
+    maxTokens?: number;    // Maximum tokens in response
+  };
+}
+```
+
+#### Event Handler Configuration
+
+```typescript
+events: {
+  // Global switch to enable/disable all handlers
+  enabled: boolean;
+  
+  handlers: {
+    // Pull request created event handler
+    pullRequestCreated?: {
+      enabled: boolean;
+      options?: {
+        postComment?: boolean;  // Whether to post a comment on the PR
+        reviewDepth?: 'basic' | 'detailed' | 'comprehensive';  // Level of detail
+        timeLimit?: number;     // Maximum time for analysis (seconds)
+      };
+    };
+    
+    // Repository push event handler
+    repoPush?: {
+      enabled: boolean;
+      options?: {
+        branches?: string[];    // Branches to monitor (empty = all)
+        notifyChat?: boolean;   // Whether to notify on Google Chat
+      };
+    };
+  };
+}
 ```
 
 ## Supported Events
